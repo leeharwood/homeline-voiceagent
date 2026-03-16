@@ -5,6 +5,7 @@ from homeline.schemas import common, listing, lead, faq
 from homeline.services import listing_service, lead_service, faq_service
 from homeline.api.dependencies import get_db
 from homeline.config import settings
+from homeline.utils.logging import logger
 
 api_router = APIRouter()
 
@@ -37,9 +38,9 @@ async def dynamic_variables(request: Request):
 # Listings
 @api_router.post("/tool/search-listings", response_model=common.WebhookResponse)
 def search_listings(req: listing.SearchListingsRequest):
-    from homeline.mcp.adapter import call_mcp_tool
-    result = call_mcp_tool(
-        "search_listings", 
+    from homeline.mcp.server import search_listings_impl
+    logger.info("Delegating execution to MCP-backed business layer: search_listings_impl")
+    result = search_listings_impl(
         city=req.city, 
         max_price=req.max_price, 
         beds=req.min_beds
@@ -48,9 +49,9 @@ def search_listings(req: listing.SearchListingsRequest):
 
 @api_router.post("/tool/get-listing-details", response_model=common.WebhookResponse)
 def get_listing_details(req: listing.GetListingDetailsRequest):
-    from homeline.mcp.adapter import call_mcp_tool
-    result = call_mcp_tool(
-        "get_listing_details", 
+    from homeline.mcp.server import get_listing_details_impl
+    logger.info("Delegating execution to MCP-backed business layer: get_listing_details_impl")
+    result = get_listing_details_impl(
         listing_id=req.listing_id
     )
     return common.WebhookResponse(response=result)
@@ -58,11 +59,11 @@ def get_listing_details(req: listing.GetListingDetailsRequest):
 # Leads & Activity
 @api_router.post("/tool/create-lead", response_model=common.WebhookResponse)
 def create_lead(req: lead.CreateLeadRequest):
-    from homeline.mcp.adapter import call_mcp_tool
+    from homeline.mcp.server import create_lead_impl
+    logger.info("Delegating execution to MCP-backed business layer: create_lead_impl")
     # The webhook schema 'req.query' encompasses intent/area/budget. 
     # We map 'query' to 'intent' to fulfill the MCP signature requirement gracefully.
-    result = call_mcp_tool(
-        "create_lead", 
+    result = create_lead_impl(
         name=req.name, 
         phone=req.phone, 
         intent=req.query or "General Inquiry"
@@ -71,9 +72,9 @@ def create_lead(req: lead.CreateLeadRequest):
 
 @api_router.post("/tool/create-showing", response_model=common.WebhookResponse)
 def create_showing(req: lead.CreateShowingRequest):
-    from homeline.mcp.adapter import call_mcp_tool
-    result = call_mcp_tool(
-        "create_showing_request", 
+    from homeline.mcp.server import create_showing_request_impl
+    logger.info("Delegating execution to MCP-backed business layer: create_showing_request_impl")
+    result = create_showing_request_impl(
         name=req.name, 
         phone=req.phone, 
         listing_id=req.listing_id, 
@@ -83,9 +84,9 @@ def create_showing(req: lead.CreateShowingRequest):
 
 @api_router.post("/tool/create-callback", response_model=common.WebhookResponse)
 def create_callback(req: lead.CreateCallbackRequest):
-    from homeline.mcp.adapter import call_mcp_tool
-    result = call_mcp_tool(
-        "create_callback_request", 
+    from homeline.mcp.server import create_callback_request_impl
+    logger.info("Delegating execution to MCP-backed business layer: create_callback_request_impl")
+    result = create_callback_request_impl(
         name=req.name, 
         phone=req.phone, 
         reason=req.reason or "Callback requested by User"
@@ -95,9 +96,9 @@ def create_callback(req: lead.CreateCallbackRequest):
 # FAQ
 @api_router.post("/tool/search-faq", response_model=common.WebhookResponse)
 def search_faq(req: faq.SearchFAQRequest):
-    from homeline.mcp.adapter import call_mcp_tool
-    result = call_mcp_tool(
-        "search_faq", 
+    from homeline.mcp.server import search_faq_impl
+    logger.info("Delegating execution to MCP-backed business layer: search_faq_impl")
+    result = search_faq_impl(
         query=req.query
     )
     return common.WebhookResponse(response=result)

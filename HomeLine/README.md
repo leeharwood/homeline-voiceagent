@@ -11,15 +11,16 @@ Caller
  └─→ Telnyx AI Assistant
       └─→ Dynamic Variables & Webhook Tools (HTTP POST)
            └─→ FastAPI Backend (`/api/tool/*`)
-                └─→ Custom FastMCP Server Layer (`homeline/mcp/server.py`)
+                └─→ MCP-Backed Business Logic (shared `*_impl` functions)
+                     ├─→ Custom FastMCP Server (`homeline/mcp/server.py`)
                      └─→ Service Logic & SQLite Database
 ```
 ### Why MCP in this architecture?
-By delegating the execution of webhook endpoints to an **in-process MCP Server**, we ensure the backend capabilities are defined strictly as modular MCP tools. This makes HomeLine a true *MCP-backed* application, capable of exposing those exact same tools directly to an LLM desktop client (like Claude) or any other MCP-compatible orchestration layer.
+By sharing the underlying implementation functions between the FastAPI webhooks and the **MCP Server**, we ensure the backend capabilities are defined strictly as modular tools without relying on private SDK internals. This makes HomeLine a true *MCP-backed* application, capable of exposing those exact same tools directly to an LLM desktop client (like Claude) or any other MCP-compatible orchestration layer.
 
 ### Tradeoffs
 **Why does Telnyx still call webhook endpoints if MCP is used behind the backend?**
-- **Simplicity vs. Distribution:** Relaying the webhook locally to an in-process MCP server avoids introducing complex, distributed infrastructure (like spinning up a separate MCP transport service and connecting it to Telnyx).
+- **Simplicity vs. Distribution:** Implementing shared logic functions behind the webhooks avoids introducing complex, distributed infrastructure (like spinning up a separate MCP transport service and connecting it to Telnyx).
 - **Vendor Compatibility:** Telnyx AI Assistant natively supports RESTful POST webhooks rather than raw MCP SSE/Stdio transports. This routing pattern maintains 100% compatibility with Telnyx while letting the backend neatly organize around the MCP specification.
 
 - **FastAPI Endpoints**: Centralized routing in `homeline/api/routes.py` handling inbound webhook formats.

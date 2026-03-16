@@ -5,9 +5,7 @@ from homeline.services import listing_service, faq_service, lead_service
 
 mcp = FastMCP("HomeLine Real Estate Assistant")
 
-@mcp.tool()
-def search_listings(city: str | None = None, max_price: float | None = None, beds: int | None = None) -> str:
-    """Search for available real estate listings based on criteria."""
+def search_listings_impl(city: str | None = None, max_price: float | None = None, beds: int | None = None) -> str:
     db = SessionLocal()
     try:
         req = listing.SearchListingsRequest(
@@ -18,8 +16,12 @@ def search_listings(city: str | None = None, max_price: float | None = None, bed
         db.close()
 
 @mcp.tool()
-def get_listing_details(listing_id: int | None = None, address: str | None = None) -> str:
-    """Get detailed information about a specific listing by its ID or address."""
+def search_listings(city: str | None = None, max_price: float | None = None, beds: int | None = None) -> str:
+    """Search for available real estate listings based on criteria."""
+    return search_listings_impl(city, max_price, beds)
+
+
+def get_listing_details_impl(listing_id: int | None = None, address: str | None = None) -> str:
     db = SessionLocal()
     try:
         # Note: listing_service expects listing_id currently. If address is passed and no ID, we fetch ID first.
@@ -42,8 +44,12 @@ def get_listing_details(listing_id: int | None = None, address: str | None = Non
         db.close()
 
 @mcp.tool()
-def search_faq(query: str) -> str:
-    """Search the office FAQ for answers to common questions about hours, services, commissions, etc."""
+def get_listing_details(listing_id: int | None = None, address: str | None = None) -> str:
+    """Get detailed information about a specific listing by its ID or address."""
+    return get_listing_details_impl(listing_id, address)
+
+
+def search_faq_impl(query: str) -> str:
     db = SessionLocal()
     try:
         req = faq.SearchFAQRequest(query=query)
@@ -52,8 +58,12 @@ def search_faq(query: str) -> str:
         db.close()
 
 @mcp.tool()
-def create_lead(name: str, phone: str, intent: str, area: str | None = None, budget: str | None = None, timeline: str | None = None) -> str:
-    """Create a new lead to save a caller's information."""
+def search_faq(query: str) -> str:
+    """Search the office FAQ for answers to common questions about hours, services, commissions, etc."""
+    return search_faq_impl(query)
+
+
+def create_lead_impl(name: str, phone: str, intent: str, area: str | None = None, budget: str | None = None, timeline: str | None = None) -> str:
     db = SessionLocal()
     try:
         query_details = f"Intent: {intent}"
@@ -67,8 +77,12 @@ def create_lead(name: str, phone: str, intent: str, area: str | None = None, bud
         db.close()
 
 @mcp.tool()
-def create_showing_request(name: str, phone: str, listing_id: int, preferred_time: str) -> str:
-    """Request a property showing for a specific listing."""
+def create_lead(name: str, phone: str, intent: str, area: str | None = None, budget: str | None = None, timeline: str | None = None) -> str:
+    """Create a new lead to save a caller's information."""
+    return create_lead_impl(name, phone, intent, area, budget, timeline)
+
+
+def create_showing_request_impl(name: str, phone: str, listing_id: int, preferred_time: str) -> str:
     db = SessionLocal()
     try:
         req = lead.CreateShowingRequest(
@@ -79,14 +93,24 @@ def create_showing_request(name: str, phone: str, listing_id: int, preferred_tim
         db.close()
 
 @mcp.tool()
-def create_callback_request(name: str, phone: str, reason: str) -> str:
-    """Request a callback from a human agent."""
+def create_showing_request(name: str, phone: str, listing_id: int, preferred_time: str) -> str:
+    """Request a property showing for a specific listing."""
+    return create_showing_request_impl(name, phone, listing_id, preferred_time)
+
+
+def create_callback_request_impl(name: str, phone: str, reason: str) -> str:
     db = SessionLocal()
     try:
         req = lead.CreateCallbackRequest(name=name, phone=phone, reason=reason)
         return lead_service.create_callback_request(db, req)
     finally:
         db.close()
+
+@mcp.tool()
+def create_callback_request(name: str, phone: str, reason: str) -> str:
+    """Request a callback from a human agent."""
+    return create_callback_request_impl(name, phone, reason)
+
 
 if __name__ == "__main__":
     mcp.run()
