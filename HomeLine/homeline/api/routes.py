@@ -30,7 +30,7 @@ async def dynamic_variables(request: Request):
         "business_hours": settings.BUSINESS_HOURS,
         "service_areas": settings.SERVICE_AREAS,
         "featured_listing_city": settings.FEATURED_LISTING_CITY,
-        "caller_phone": body.get("caller_id", "Unknown caller"),
+        "caller_phone": body.get("from") or body.get("caller_id") or "Unknown caller",
         "returning_caller": "False" 
     }
 

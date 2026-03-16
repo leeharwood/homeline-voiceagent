@@ -18,3 +18,13 @@ Base = declarative_base()
 def init_db():
     logger.info("Initializing database tables if not existing")
     Base.metadata.create_all(bind=engine)
+    
+    # If using an in-memory database or as a demo, seed the DB
+    if settings.DATABASE_URL == "sqlite:///:memory:" or ":memory:" in settings.DATABASE_URL:
+        from homeline.db.seed_data import seed_database
+        db = SessionLocal()
+        try:
+            seed_database(db)
+            logger.info("Demo database seeded successfully")
+        finally:
+            db.close()

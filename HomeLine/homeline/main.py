@@ -28,7 +28,7 @@ def create_app() -> FastAPI:
     )
 
     # Routes
-    app.include_router(api_router)
+    app.include_router(api_router, prefix="/api")
 
     # Error Handlers
     add_error_handlers(app)

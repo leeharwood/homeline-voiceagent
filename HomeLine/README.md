@@ -58,25 +58,27 @@ This project has been structured into a clean, maintainable, production-ready ba
    mcp run homeline/mcp/server.py
    ```
 
+9. **Run Ngrok for Local Webhooks (Optional)**
+   To test with Telnyx locally, expose your local port 8000 using Ngrok:
+   ```bash
+   ngrok http 8000
+   ```
+   *Use the forwarded `https` URL in your Telnyx Assistant tool webhooks.*
+
 ---
 
-## ☁️ Deployment on Render
+## ☁️ Deployment on Vercel
 
-This project is tailored for instant public deployment on [Render](https://render.com/).
+This project is tailored for instant serverless deployment on [Vercel](https://vercel.com/).
 
-1. **Create a New Web Service** on Render, connected to your GitHub repository.
-2. **Environment**: Select `Python 3`.
-3. **Build Command**: 
+1. **Install Vercel CLI** (or connect your GitHub repo to Vercel).
+2. **Deploy** by running from the project root:
    ```bash
-   pip install -r requirements.txt
+   vercel
    ```
-4. **Start Command**:
-   ```bash
-   uvicorn homeline.main:app --host 0.0.0.0 --port $PORT
-   ```
-5. **Environment Variables**:
-   Under the environment tab in Render, configure:
-   - `DATABASE_URL`: Add a Render PostgreSQL database and place the internal URL here. `homeline.db.database` will automatically connect to it.
+3. **Environment Variables**:
+   By default, Vercel provides a read-only filesystem. The application detects the Vercel environment and safely falls back to seeding an in-memory database on every function cold-start, strictly for demo purposes.
+   To persist data later, simply add a `DATABASE_URL` to Vercel pointing to a PostgreSQL database.
 
 ---
 
@@ -85,8 +87,8 @@ This project is tailored for instant public deployment on [Render](https://rende
 Go to your Telnyx Portal, navigate to AI Assistants, and create a new Assistant.
 
 ### 1. Dynamic Variables Webhook
-Point this to your Ngrok or Render URL so the prompt can be built dynamically on every call.
-- **URL**: `https://<YOUR-URL>/dynamic-variables`
+Point this to your Ngrok or Vercel URL so the prompt can be built dynamically on every call.
+- **URL**: `https://<YOUR-NGROK-OR-VERCEL-URL>/api/dynamic-variables`
 - **Method**: `POST`
 
 **Sample Webhook Response from this endpoint:**
@@ -129,7 +131,7 @@ Add the following Webhook Tools in the Telnyx portal:
 **Tool 1: search-listings**
 - **Description**: Search for available real estate listings based on the user's criteria.
 - **Method**: POST
-- **URL**: `https://<YOUR-URL>/tool/search-listings`
+- **URL**: `https://<YOUR-NGROK-OR-VERCEL-URL>/api/tool/search-listings`
 - **Body Schema**:
   ```json
   {
@@ -146,7 +148,7 @@ Add the following Webhook Tools in the Telnyx portal:
 **Tool 2: get-listing-details**
 - **Description**: Get extensive details about a single listing to describe it to the caller.
 - **Method**: POST
-- **URL**: `https://<YOUR-URL>/tool/get-listing-details`
+- **URL**: `https://<YOUR-NGROK-OR-VERCEL-URL>/api/tool/get-listing-details`
 - **Body Schema**:
   ```json
   {
@@ -161,7 +163,7 @@ Add the following Webhook Tools in the Telnyx portal:
 **Tool 3: search-faq**
 - **Description**: Search office FAQs for general knowledge, commissions, hours, processes, etc.
 - **Method**: POST
-- **URL**: `https://<YOUR-URL>/tool/search-faq`
+- **URL**: `https://<YOUR-NGROK-OR-VERCEL-URL>/api/tool/search-faq`
 - **Body Schema**:
   ```json
   {
@@ -176,7 +178,7 @@ Add the following Webhook Tools in the Telnyx portal:
 **Tool 4: create-lead**
 - **Description**: Save the caller's basic lead info so agents have a record.
 - **Method**: POST
-- **URL**: `https://<YOUR-URL>/tool/create-lead`
+- **URL**: `https://<YOUR-NGROK-OR-VERCEL-URL>/api/tool/create-lead`
 - **Body Schema**:
   ```json
   {
@@ -193,7 +195,7 @@ Add the following Webhook Tools in the Telnyx portal:
 **Tool 5: create-showing**
 - **Description**: Request an in-person or virtual property showing.
 - **Method**: POST
-- **URL**: `https://<YOUR-URL>/tool/create-showing`
+- **URL**: `https://<YOUR-NGROK-OR-VERCEL-URL>/api/tool/create-showing`
 - **Body Schema**:
   ```json
   {
@@ -211,7 +213,7 @@ Add the following Webhook Tools in the Telnyx portal:
 **Tool 6: create-callback**
 - **Description**: Request a human agent callback for escalations or detailed negotiations.
 - **Method**: POST
-- **URL**: `https://<YOUR-URL>/tool/create-callback`
+- **URL**: `https://<YOUR-NGROK-OR-VERCEL-URL>/api/tool/create-callback`
 - **Body Schema**:
   ```json
   {
@@ -234,12 +236,12 @@ Add the following Webhook Tools in the Telnyx portal:
 curl -X GET http://localhost:8000/health
 
 # Trigger Dynamic Variables
-curl -X POST http://localhost:8000/dynamic-variables \
+curl -X POST http://localhost:8000/api/dynamic-variables \
   -H "Content-Type: application/json" \
   -d '{"caller_id": "+1234567890"}'
 
 # Search Listings tool
-curl -X POST http://localhost:8000/tool/search-listings \
+curl -X POST http://localhost:8000/api/tool/search-listings \
   -H "Content-Type: application/json" \
   -d '{"city": "Springfield", "min_beds": 3}'
 ```
