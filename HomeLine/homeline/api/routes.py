@@ -36,33 +36,68 @@ async def dynamic_variables(request: Request):
 
 # Listings
 @api_router.post("/tool/search-listings", response_model=common.WebhookResponse)
-def search_listings(req: listing.SearchListingsRequest, db: Session = Depends(get_db)):
-    result = listing_service.search_listings(db, req)
+def search_listings(req: listing.SearchListingsRequest):
+    from homeline.mcp.adapter import call_mcp_tool
+    result = call_mcp_tool(
+        "search_listings", 
+        city=req.city, 
+        max_price=req.max_price, 
+        beds=req.min_beds
+    )
     return common.WebhookResponse(response=result)
 
 @api_router.post("/tool/get-listing-details", response_model=common.WebhookResponse)
-def get_listing_details(req: listing.GetListingDetailsRequest, db: Session = Depends(get_db)):
-    result = listing_service.get_listing_details(db, req)
+def get_listing_details(req: listing.GetListingDetailsRequest):
+    from homeline.mcp.adapter import call_mcp_tool
+    result = call_mcp_tool(
+        "get_listing_details", 
+        listing_id=req.listing_id
+    )
     return common.WebhookResponse(response=result)
 
 # Leads & Activity
 @api_router.post("/tool/create-lead", response_model=common.WebhookResponse)
-def create_lead(req: lead.CreateLeadRequest, db: Session = Depends(get_db)):
-    result = lead_service.create_lead(db, req)
+def create_lead(req: lead.CreateLeadRequest):
+    from homeline.mcp.adapter import call_mcp_tool
+    # The webhook schema 'req.query' encompasses intent/area/budget. 
+    # We map 'query' to 'intent' to fulfill the MCP signature requirement gracefully.
+    result = call_mcp_tool(
+        "create_lead", 
+        name=req.name, 
+        phone=req.phone, 
+        intent=req.query or "General Inquiry"
+    )
     return common.WebhookResponse(response=result)
 
 @api_router.post("/tool/create-showing", response_model=common.WebhookResponse)
-def create_showing(req: lead.CreateShowingRequest, db: Session = Depends(get_db)):
-    result = lead_service.create_showing_request(db, req)
+def create_showing(req: lead.CreateShowingRequest):
+    from homeline.mcp.adapter import call_mcp_tool
+    result = call_mcp_tool(
+        "create_showing_request", 
+        name=req.name, 
+        phone=req.phone, 
+        listing_id=req.listing_id, 
+        preferred_time=req.preferred_time
+    )
     return common.WebhookResponse(response=result)
 
 @api_router.post("/tool/create-callback", response_model=common.WebhookResponse)
-def create_callback(req: lead.CreateCallbackRequest, db: Session = Depends(get_db)):
-    result = lead_service.create_callback_request(db, req)
+def create_callback(req: lead.CreateCallbackRequest):
+    from homeline.mcp.adapter import call_mcp_tool
+    result = call_mcp_tool(
+        "create_callback_request", 
+        name=req.name, 
+        phone=req.phone, 
+        reason=req.reason or "Callback requested by User"
+    )
     return common.WebhookResponse(response=result)
 
 # FAQ
 @api_router.post("/tool/search-faq", response_model=common.WebhookResponse)
-def search_faq(req: faq.SearchFAQRequest, db: Session = Depends(get_db)):
-    result = faq_service.search_faqs(db, req)
+def search_faq(req: faq.SearchFAQRequest):
+    from homeline.mcp.adapter import call_mcp_tool
+    result = call_mcp_tool(
+        "search_faq", 
+        query=req.query
+    )
     return common.WebhookResponse(response=result)

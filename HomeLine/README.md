@@ -3,14 +3,35 @@
 HomeLine is a production-ready Minimum Viable Product (MVP) designed to power a real estate customer service voice AI assistant. It integrates with Telnyx AI Assistant to handle incoming calls, answer FAQs, search for property listings, collect lead information, and book showing or callback requests.
 
 ## 🏗️ Architecture
-This project has been structured into a clean, maintainable, production-ready backend:
-- **FastAPI Endpoints**: Centralized routing in `homeline/api/routes.py`, complete with centralized error handling in `error_handlers.py`.
-- **Pydantic Schemas**: Structured request/response payload validation via `homeline/schemas`. Responses are kept concise and conversational for optimal Text-To-Speech (TTS).
-- **Service Layer**: Business logic decoupled into `homeline/services`.
-- **Database Layer**: SQLAlchemy setup (`homeline/db/database.py` and `models.py`) with an SQLite fallback, easily swappable to PostgreSQL via `.env`.
-- **MCP Server**: A standalone Model Context Protocol server exposing the exact same tools to local LLMs (e.g. Claude Desktop) via `homeline/mcp/server.py`.
-- **Structured Logging**: Pre-configured in `homeline/utils/logging.py`.
-- **Pytest**: Included unit tests for route validation.
+
+HomeLine integrates deeply with the **Model Context Protocol (MCP)** while preserving a standard HTTP webhook layer required by the Telnyx AI Assistant.
+
+```text
+Caller
+ └─→ Telnyx AI Assistant
+      └─→ Dynamic Variables & Webhook Tools (HTTP POST)
+           └─→ FastAPI Backend (`/api/tool/*`)
+                └─→ Custom FastMCP Server Layer (`homeline/mcp/server.py`)
+                     └─→ Service Logic & SQLite Database
+```
+### Why MCP in this architecture?
+By delegating the execution of webhook endpoints to an **in-process MCP Server**, we ensure the backend capabilities are defined strictly as modular MCP tools. This makes HomeLine a true *MCP-backed* application, capable of exposing those exact same tools directly to an LLM desktop client (like Claude) or any other MCP-compatible orchestration layer.
+
+### Tradeoffs
+**Why does Telnyx still call webhook endpoints if MCP is used behind the backend?**
+- **Simplicity vs. Distribution:** Relaying the webhook locally to an in-process MCP server avoids introducing complex, distributed infrastructure (like spinning up a separate MCP transport service and connecting it to Telnyx).
+- **Vendor Compatibility:** Telnyx AI Assistant natively supports RESTful POST webhooks rather than raw MCP SSE/Stdio transports. This routing pattern maintains 100% compatibility with Telnyx while letting the backend neatly organize around the MCP specification.
+
+- **FastAPI Endpoints**: Centralized routing in `homeline/api/routes.py` handling inbound webhook formats.
+- **MCP Server Layer**: A `FastMCP` server defining tools:
+  - `search_listings(city, max_price, beds)`
+  - `get_listing_details(listing_id, address)`
+  - `create_lead(name, phone, intent, area, budget, timeline)`
+  - `create_showing_request(name, phone, listing_id, preferred_time)`
+  - `create_callback_request(name, phone, reason)`
+  - `search_faq(query)`
+- **Pydantic Schemas**: Structured request payloads in `homeline/schemas`. Responses are concise and conversational for optimal voice Text-To-Speech (TTS).
+- **Service & Database Layers**: Abstracted business logic backed by SQLAlchemy. Swappable to PostgreSQL via `.env`.
 
 ---
 
@@ -52,11 +73,12 @@ This project has been structured into a clean, maintainable, production-ready ba
    uvicorn homeline.main:app --reload --port 8000
    ```
 
-8. **Run the MCP Server (Optional)**
-   You can test the tools locally via a standard MCP client (like Claude Desktop).
+8. **Run the local MCP Server (Test MCP natively)**
+   You can interact directly with the underlying MCP tools locally without the voice assistant via the MCP Inspector:
    ```bash
-   mcp run homeline/mcp/server.py
+   npx @modelcontextprotocol/inspector mcp run homeline/mcp/server.py
    ```
+   Or connect it directly to an MCP-compatible client like Claude Desktop.
 
 9. **Run Ngrok for Local Webhooks (Optional)**
    To test with Telnyx locally, expose your local port 8000 using Ngrok:
